@@ -1,7 +1,7 @@
 {
-	"name": "obsidian-sample-plugin",
+	"name": "obsidian-new-note-title",
 	"version": "1.0.0",
-	"description": "This is a sample plugin for Obsidian (https://obsidian.md)",
+	"description": "",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
@@ -22,6 +22,6 @@
 		"typescript": "4.7.4"
 	},
 	"dependencies": {
-		"uuid": "^11.0.3"
+		"uuid": "^14.0.0"
 	}
 }

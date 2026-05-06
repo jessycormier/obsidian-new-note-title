@@ -3,46 +3,50 @@ import {v4 as uuidv4} from 'uuid';
 
 interface NewFilenameSettings {
 	defaultFilename: string;
+	useUuid: boolean;
+	watchedFolders: string[];
 }
 
 const DEFAULT_SETTINGS: NewFilenameSettings = {
-	defaultFilename: 'Untitled'
+	defaultFilename: 'Untitled',
+	useUuid: false,
+	watchedFolders: [],
 }
 
 export default class NewFileNamePlugin extends Plugin {
 	settings: NewFilenameSettings;
 
 	async onload() {
-		// Setup the settings
 		await this.loadSettings();
 		this.addSettingTab(new NewFIleNameSettingTab(this.app, this));
 
-		// Configure a callback on the create event which only runs after the vault has loaded
 		this.app.workspace.onLayoutReady(() => {
-			// When creating a new TFile override the basename with the configured filename
 			this.registerEvent(this.app.vault.on('create', file => {
-				let filename = this.settings.defaultFilename;
-				if (filename.length == 0) {
-					filename = uuidv4();
-				}
-				if (file instanceof TFile) {
-					file.basename = this.getLowestNonColidingFilename(filename);
-				}
-			}));  
+				if (!(file instanceof TFile) || file.extension !== 'md') return;
+				if (!this.isWatched(file)) return;
+				const filename = this.settings.useUuid ? uuidv4() : (this.settings.defaultFilename || 'Untitled');
+				file.basename = this.getLowestNonColidingFilename(filename);
+			}));
 		});
 	}
 
-	private getLowestNonColidingFilename(filename: string) {		
-		// get all the filenames that contain our desired filename as a substring
+	private isWatched(file: TFile): boolean {
+		if (this.settings.watchedFolders.length === 0) return true;
+		const folder = file.parent?.path ?? '/';
+		return this.settings.watchedFolders.some(f => {
+			const watched = f.trim().replace(/\/+$/, '');
+			return folder === watched || folder.startsWith(watched + '/');
+		});
+	}
+
+	private getLowestNonColidingFilename(filename: string) {
 		const files = this.app.vault.getMarkdownFiles();
 		const potentially_coliding_files = files.filter((file) => file.basename.includes(filename));
 		const potentially_coliding_filenames = new Set(potentially_coliding_files.map((file) => file.basename));
-		// iterate through potential filenames until we find one that doesn't already exist
-		// this should require at most potentially_coliding_filenames.length + 1 attempts
 		for (let i = 0; i < potentially_coliding_filenames.size + 1; i++) {
 			let file_name_to_attempt = filename;
 			if (i > 0) {
-				file_name_to_attempt = `${filename} ${i}`; 
+				file_name_to_attempt = `${filename} ${i}`;
 			}
 			if (!potentially_coliding_filenames.has(file_name_to_attempt)) {
 				return file_name_to_attempt;
@@ -77,14 +81,45 @@ class NewFIleNameSettingTab extends PluginSettingTab {
 
 		containerEl.empty();
 
+		let textComponent: import('obsidian').TextComponent;
+
 		new Setting(containerEl)
 			.setName('Default filename')
-			.setDesc('Filename to create new notes with. (Leave blank to generate a UUID).')
-			.addText(text => text
-				.setPlaceholder('New filename')
-				.setValue(this.plugin.settings.defaultFilename)
+			.setDesc('Filename for new markdown notes.')
+			.addText(text => {
+				textComponent = text;
+				text
+					.setPlaceholder('Untitled')
+					.setValue(this.plugin.settings.defaultFilename)
+					.setDisabled(this.plugin.settings.useUuid)
+					.onChange(async (value) => {
+						this.plugin.settings.defaultFilename = value;
+						await this.plugin.saveSettings();
+					});
+			});
+
+		new Setting(containerEl)
+			.setName('Use UUID for new markdown files')
+			.setDesc('When enabled, new notes get a UUID filename instead of the default filename above.')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.useUuid)
 				.onChange(async (value) => {
-					this.plugin.settings.defaultFilename = value;
+					this.plugin.settings.useUuid = value;
+					textComponent.setDisabled(value);
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName('Watched folders')
+			.setDesc('Only apply to new notes in these folders (one per line, includes subfolders). Leave empty to apply everywhere.')
+			.addTextArea(text => text
+				.setPlaceholder('Notes\nJournal/Daily')
+				.setValue(this.plugin.settings.watchedFolders.join('\n'))
+				.onChange(async (value) => {
+					this.plugin.settings.watchedFolders = value
+						.split('\n')
+						.map(f => f.trim())
+						.filter(f => f.length > 0);
 					await this.plugin.saveSettings();
 				}));
 	}
