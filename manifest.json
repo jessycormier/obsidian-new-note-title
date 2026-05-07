@@ -1,7 +1,7 @@
 {
 	"id": "new-note-title",
 	"name": "New Note Title",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"minAppVersion": "1.0.0",
 	"description": "Change the default filename used for new notes",
 	"author": "Jessy Cormier",
