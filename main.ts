@@ -25,7 +25,12 @@ export default class NewFileNamePlugin extends Plugin {
 				if (!(file instanceof TFile) || file.extension !== 'md') return;
 				if (!this.isWatched(file)) return;
 				const filename = this.settings.useUuid ? uuidv4() : (this.settings.defaultFilename || 'Untitled');
-				file.basename = this.getLowestNonColidingFilename(filename);
+				const newBasename = this.getLowestNonColidingFilename(filename);
+				const parentPath = file.parent?.path;
+				const newPath = parentPath && parentPath !== '/'
+					? `${parentPath}/${newBasename}.md`
+					: `${newBasename}.md`;
+				setTimeout(() => this.app.fileManager.renameFile(file, newPath), 0);
 			}));
 		});
 	}
