@@ -2,3 +2,37 @@ input[type="text"]:disabled {
 	opacity: 0.4;
 	cursor: not-allowed;
 }
+
+.nnt-card {
+	background: var(--background-secondary);
+	border-radius: var(--radius-m);
+	border: 1px solid var(--background-modifier-border);
+	overflow: hidden;
+	margin-bottom: 16px;
+}
+
+.nnt-card .setting-item {
+	border-top: none;
+}
+
+.nnt-card hr {
+	margin: 0;
+}
+
+.nnt-preview-value {
+	color: var(--link-color);
+	font-weight: bold;
+}
+
+.nnt-folder-row.setting-item {
+	padding-top: 4px;
+	padding-bottom: 4px;
+}
+
+.nnt-folder-row .setting-control {
+	flex: 1;
+}
+
+.nnt-folder-input {
+	width: 100%;
+}

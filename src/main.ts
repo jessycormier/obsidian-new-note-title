@@ -33,13 +33,13 @@ export default class NewFileNamePlugin extends Plugin {
 				const tryRename = async (retriesLeft: number) => {
 					try {
 						await this.app.fileManager.renameFile(file, newPath);
-					} catch (e) {
+					} catch {
 						if (retriesLeft > 0) {
-							setTimeout(() => tryRename(retriesLeft - 1), 100);
+							window.setTimeout(() => void tryRename(retriesLeft - 1), 100);
 						}
 					}
 				};
-				setTimeout(() => tryRename(5), 0);
+				window.setTimeout(() => void tryRename(5), 0);
 			}));
 		});
 	}
@@ -80,7 +80,7 @@ export default class NewFileNamePlugin extends Plugin {
 	}
 
 	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData() as Partial<NewFilenameSettings>);
 	}
 
 	async saveSettings() {
@@ -120,11 +120,8 @@ class NewFIleNameSettingTab extends PluginSettingTab {
 		const {containerEl} = this;
 		containerEl.empty();
 
-		const CARD = 'background:var(--background-secondary);border-radius:var(--radius-m);border:1px solid var(--background-modifier-border);overflow:hidden;margin-bottom:16px;';
-
 		// --- Card 1: File name pattern + Date format ---
-		const patternCardEl = containerEl.createDiv();
-		patternCardEl.style.cssText = CARD;
+		const patternCardEl = containerEl.createDiv({cls: 'nnt-card'});
 
 		let liveDateFormat = this.plugin.settings.dateFormat;
 
@@ -139,13 +136,10 @@ class NewFIleNameSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 					updatePatternPreview(value);
 				}));
-		patternSetting.settingEl.style.borderTop = 'none';
 
 		const patternPreviewLine = patternSetting.descEl.createEl('div');
 		patternPreviewLine.appendText('Your current pattern looks like this: ');
-		const patternPreviewValue = patternPreviewLine.createEl('span');
-		patternPreviewValue.style.color = 'var(--link-color)';
-		patternPreviewValue.style.fontWeight = 'bold';
+		const patternPreviewValue = patternPreviewLine.createEl('span', {cls: 'nnt-preview-value'});
 
 		const updatePatternPreview = (pattern: string) => {
 			const resolved = (pattern || 'Untitled')
@@ -156,7 +150,7 @@ class NewFIleNameSettingTab extends PluginSettingTab {
 
 		updatePatternPreview(this.plugin.settings.filenamePattern);
 
-		patternCardEl.createEl('hr').style.margin = '0';
+		patternCardEl.createEl('hr');
 
 		const dateFormatSetting = new Setting(patternCardEl)
 			.setName('Date format')
@@ -171,13 +165,10 @@ class NewFIleNameSettingTab extends PluginSettingTab {
 					updateDatePreview(value);
 					updatePatternPreview(this.plugin.settings.filenamePattern);
 				}));
-		dateFormatSetting.settingEl.style.borderTop = 'none';
 
 		const datePreviewLine = dateFormatSetting.descEl.createEl('div');
 		datePreviewLine.appendText('Your current format looks like this: ');
-		const datePreviewValue = datePreviewLine.createEl('span');
-		datePreviewValue.style.color = 'var(--link-color)';
-		datePreviewValue.style.fontWeight = 'bold';
+		const datePreviewValue = datePreviewLine.createEl('span', {cls: 'nnt-preview-value'});
 
 		const updateDatePreview = (format: string) => {
 			try {
@@ -190,13 +181,11 @@ class NewFIleNameSettingTab extends PluginSettingTab {
 		updateDatePreview(this.plugin.settings.dateFormat);
 
 		// --- Card 2: Watched folders ---
-		const foldersCardEl = containerEl.createDiv();
-		foldersCardEl.style.cssText = CARD;
+		const foldersCardEl = containerEl.createDiv({cls: 'nnt-card'});
 
-		const watchedHeader = new Setting(foldersCardEl)
+		new Setting(foldersCardEl)
 			.setName('Watched folders')
 			.setDesc('Only rename notes in these folders (includes subfolders). Leave empty to apply everywhere.');
-		watchedHeader.settingEl.style.borderTop = 'none';
 
 		const rowContainerEl = foldersCardEl.createDiv();
 
@@ -212,7 +201,7 @@ class NewFIleNameSettingTab extends PluginSettingTab {
 								this.plugin.settings.watchedFolders[index] = value;
 								await this.plugin.saveSettings();
 							});
-						cb.inputEl.style.width = '100%';
+						cb.inputEl.addClass('nnt-folder-input');
 					})
 					.addExtraButton(cb => {
 						cb.setIcon('cross')
@@ -224,16 +213,13 @@ class NewFIleNameSettingTab extends PluginSettingTab {
 							});
 					});
 				s.infoEl.remove();
-				s.controlEl.style.flex = '1';
-				s.settingEl.style.borderTop = 'none';
-				s.settingEl.style.paddingTop = '4px';
-				s.settingEl.style.paddingBottom = '4px';
+				s.settingEl.addClass('nnt-folder-row');
 			});
 		};
 
 		renderFolderRows();
 
-		foldersCardEl.createEl('hr').style.margin = '0';
+		foldersCardEl.createEl('hr');
 
 		const addBtnSetting = new Setting(foldersCardEl)
 			.addButton(btn => btn
@@ -244,7 +230,6 @@ class NewFIleNameSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 					renderFolderRows();
 				}));
-		addBtnSetting.settingEl.style.borderTop = 'none';
 		addBtnSetting.infoEl.remove();
 	}
 }
