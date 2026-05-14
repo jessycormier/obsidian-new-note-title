@@ -24,6 +24,15 @@ Obsidian plugin that controls the filename given to new markdown notes.
 | `{{date}}` | Current date using the configured date format |
 | `{{uuid}}` | Random UUID v4 |
 
+## Disclosures
+
+This plugin reads file and folder information from your vault. Here's what it accesses and why:
+
+- **Your note filenames** - read via Obsidian's API when creating a new note to avoid duplicate filenames. For example, if `My Note` already exists, the new note becomes `My Note 1`.
+- **Your folder names** - read via Obsidian's API to power the folder picker in settings, so you can select which folders the plugin applies to.
+
+No data leaves your device. Everything stays local within Obsidian.
+
 ## Credits
 
 Forked from [obsidian-uuid-title](https://github.com/TheLoneWanderer4/obsidian-uuid-title) by TheLoneWanderer4.
