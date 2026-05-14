@@ -1,4 +1,4 @@
-import { AbstractInputSuggest, App, MarkdownView, Plugin, PluginSettingTab, Setting, TAbstractFile, TFile, TFolder, moment } from 'obsidian';
+import { AbstractInputSuggest, App, Plugin, PluginSettingTab, Setting, TAbstractFile, TFile, TFolder, moment } from 'obsidian';
 import {v4 as uuidv4} from 'uuid';
 
 interface NewFilenameSettings {
@@ -22,7 +22,7 @@ export default class NewFileNamePlugin extends Plugin {
 
 		this.app.workspace.onLayoutReady(() => {
 			this.registerEvent(this.app.vault.on('create', file => {
-				if (!(file instanceof TFile) || file.extension !== 'md') return;
+				if (!(file instanceof TFile) || file.extension !== 'md' || !file.basename) return;
 				if (!this.isWatched(file)) return;
 				const filename = this.resolvePattern() || 'Untitled';
 				const newBasename = this.getLowestNonColidingFilename(filename);
@@ -33,11 +33,8 @@ export default class NewFileNamePlugin extends Plugin {
 				const tryRename = async (retriesLeft: number) => {
 					try {
 						await this.app.fileManager.renameFile(file, newPath);
-						this.app.workspace.iterateAllLeaves(leaf => {
-							if (leaf.view instanceof MarkdownView && leaf.view.file === null) {
-								void leaf.openFile(file);
-							}
-						});
+						const leaf = this.app.workspace.getMostRecentLeaf();
+						if (leaf) await leaf.openFile(file);
 					} catch {
 						if (retriesLeft > 0) {
 							window.setTimeout(() => void tryRename(retriesLeft - 1), 100);
