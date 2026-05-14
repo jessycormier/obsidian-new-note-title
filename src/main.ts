@@ -15,10 +15,29 @@ const DEFAULT_SETTINGS: NewFilenameSettings = {
 
 export default class NewFileNamePlugin extends Plugin {
 	settings: NewFilenameSettings;
+	private pendingNewPath: string | null = null;
 
 	async onload() {
 		await this.loadSettings();
 		this.addSettingTab(new NewFIleNameSettingTab(this.app, this));
+
+		// On mobile, Obsidian may fail to open the original file after our rename.
+		// When file-open fires with null, redirect to the renamed file instead.
+		this.registerEvent(this.app.workspace.on('file-open', openedFile => {
+			if (openedFile !== null || !this.pendingNewPath) return;
+			const pendingPath = this.pendingNewPath;
+			this.pendingNewPath = null;
+			const tryOpen = (retriesLeft: number) => {
+				const target = this.app.vault.getAbstractFileByPath(pendingPath);
+				if (target instanceof TFile) {
+					const leaf = this.app.workspace.getMostRecentLeaf();
+					if (leaf) void leaf.openFile(target);
+				} else if (retriesLeft > 0) {
+					window.setTimeout(() => tryOpen(retriesLeft - 1), 100);
+				}
+			};
+			tryOpen(10);
+		}));
 
 		this.app.workspace.onLayoutReady(() => {
 			this.registerEvent(this.app.vault.on('create', file => {
@@ -30,14 +49,17 @@ export default class NewFileNamePlugin extends Plugin {
 				const newPath = parentPath && parentPath !== '/'
 					? `${parentPath}/${newBasename}.md`
 					: `${newBasename}.md`;
+				this.pendingNewPath = newPath;
+				// Safety cleanup in case file-open never fires with null (e.g. desktop)
+				window.setTimeout(() => { this.pendingNewPath = null; }, 5000);
 				const tryRename = async (retriesLeft: number) => {
 					try {
 						await this.app.fileManager.renameFile(file, newPath);
-						const leaf = this.app.workspace.getMostRecentLeaf();
-						if (leaf) await leaf.openFile(file);
 					} catch {
 						if (retriesLeft > 0) {
 							window.setTimeout(() => void tryRename(retriesLeft - 1), 100);
+						} else {
+							this.pendingNewPath = null;
 						}
 					}
 				};
