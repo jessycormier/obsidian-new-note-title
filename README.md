@@ -13,10 +13,19 @@ Obsidian plugin that controls the filename given to new markdown notes.
 
 | Setting | Description |
 |---|---|
-| **Default filename** | Name used for new notes. Defaults to `Untitled`. |
-| **Use UUID** | When enabled, ignores the default filename and uses a UUID v4 instead. |
-| **Watched folders** | One folder per line. Only new notes created in these folders (or their subfolders) are renamed. Empty = apply everywhere. |
+| **File name pattern** | Pattern for new note filenames. Supports `{{date}}` and `{{uuid}}` tokens. Defaults to `Untitled`. |
+| **Date format** | [Moment.js format](https://momentjs.com/docs/#/displaying/format/) used for `{{date}}`. Defaults to `YYYY-MM-DD`. |
+| **Watched folders** | Only rename notes in these folders (includes subfolders). Leave empty to apply everywhere. |
+
+### Tokens
+
+| Token | Output |
+|---|---|
+| `{{date}}` | Current date using the configured date format |
+| `{{uuid}}` | Random UUID v4 |
 
 ## Credits
 
 Forked from [obsidian-uuid-title](https://github.com/TheLoneWanderer4/obsidian-uuid-title) by TheLoneWanderer4.
+
+UUID generation uses the [uuid](https://github.com/uuidjs/uuid) package (MIT).
